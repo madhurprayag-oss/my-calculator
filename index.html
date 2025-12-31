@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scientific Pro MAX + Graphing</title>
+    
+    <meta name="theme-color" content="#1e1e1e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    
+    <script src="https://cdn.jsdelivr.net/npm/mathjs@11.11.0/lib/browser/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --bg: #121212;
+            --calc: #1e1e1e;
+            --text: #ffffff;
+            --btn: #333333;
+            --accent: #ff9500;
+            --equal: #28a745;
+            --display-bg: #000000;
+        }
+        body.light {
+            --bg: #e0e0e0;
+            --calc: #ffffff;
+            --text: #000000;
+            --btn: #d1d1d1;
+            --display-bg: #f0f0f0;
+        }
+        body { 
+            margin: 0; background: var(--bg); font-family: 'Segoe UI', sans-serif; 
+            display: flex; justify-content: center; align-items: center; min-height: 100vh; 
+            transition: 0.3s; overflow-x: hidden;
+        }
+        .app { 
+            width: 100%; max-width: 420px; background: var(--calc); padding: 20px; 
+            border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); 
+        }
+        .display-container { 
+            background: var(--display-bg); border-radius: 15px; padding: 20px; 
+            margin-bottom: 15px; border: 1px solid #444;
+        }
+        #display { 
+            width: 100%; border: none; background: transparent; color: #0f0; 
+            font-size: 32px; text-align: right; outline: none; font-family: 'Courier New', monospace;
+        }
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .grid-sci { grid-template-columns: repeat(5, 1fr); margin-bottom: 10px; }
+        
+        button { 
+            border: none; border-radius: 12px; padding: 15px 5px; font-size: 16px; 
+            background: var(--btn); color: var(--text); cursor: pointer; transition: 0.1s;
+        }
+        button:hover { filter: brightness(1.2); }
+        button:active { transform: scale(0.92); }
+        
+        .op { background: var(--accent); color: white; }
+        .eq { background: var(--equal); color: white; grid-column: span 2; font-weight: bold; }
+        .graph-btn { 
+            background: #007bff; color: white; grid-column: span 5; 
+            margin-top: 5px; font-weight: bold; text-transform: uppercase;
+        }
+        
+        #graphCanvas { 
+            background: #fff; border-radius: 15px; margin-top: 15px; 
+            display: none; width: 100% !important; height: auto !important;
+        }
+        .controls { display: flex; justify-content: space-between; margin-bottom: 12px; }
+        .history { 
+            max-height: 80px; overflow-y: auto; background: rgba(0,0,0,0.2); 
+            margin-top: 15px; padding: 10px; border-radius: 10px; font-size: 12px; color: #888;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app">
+    <div class="controls">
+        <button onclick="toggleTheme()">🌓 Theme</button>
+        <button onclick="toggleAngle()" id="angleBtn">Deg</button>
+        <button onclick="toggleVoice()">🎤 Voice</button>
+        <button onclick="clearDisplay()">AC</button>
+    </div>
+
+    <div class="display-container">
+        <input id="display" placeholder="0" readonly />
+    </div>
+
+    <div class="grid grid-sci">
+        <button onclick="calc('sin')">sin</button>
+        <button onclick="calc('cos')">cos</button>
+        <button onclick="calc('tan')">tan</button>
+        <button onclick="append('log(')">log</button>
+        <button onclick="append('x')">x</button>
+        <button onclick="append('^')">xʸ</button>
+        <button onclick="append('sqrt(')">√</button>
+        <button onclick="append('(')">(</button>
+        <button onclick="append(')')">)</button>
+        <button onclick="backspace()">⌫</button>
+        <button class="graph-btn" onclick="drawGraph()">📈 Plot Function (use x)</button>
+    </div>
+
+    <div class="grid">
+        <button onclick="append('7')">7</button><button onclick="append('8')">8</button><button onclick="append('9')">9</button><button class="op" onclick="append('/')">÷</button>
+        <button onclick="append('4')">4</button><button onclick="append('5')">5</button><button onclick="append('6')">6</button><button class="op" onclick="append('*')">×</button>
+        <button onclick="append('1')">1</button><button onclick="append('2')">2</button><button onclick="append('3')">3</button><button class="op" onclick="append('-')">−</button>
+        <button onclick="append('0')">0</button><button onclick="append('.')">.</button><button class="eq" onclick="calculate()">=</button><button class="op" onclick="append('+')">+</button>
+    </div>
+
+    <canvas id="graphCanvas"></canvas>
+    <div class="history" id="history"></div>
+</div>
+
+<script>
+    const display = document.getElementById('display');
+    const historyBox = document.getElementById('history');
+    const canvas = document.getElementById('graphCanvas');
+    const ctx = canvas.getContext('2d');
+    let chart;
+    let degree = true;
+    let shouldReset = false;
+
+    // --- Core Logic ---
+    function append(v) {
+        if (shouldReset) { display.value = v; shouldReset = false; }
+        else { display.value += v; }
+    }
+
+    function clearDisplay() { display.value = ''; canvas.style.display = 'none'; }
+    function backspace() { display.value = display.value.slice(0, -1); }
+
+    function calculate() {
+        try {
+            let result = math.evaluate(display.value);
+            let final = math.format(result, { precision: 10 });
+            save(display.value + " = " + final);
+            display.value = final;
+            shouldReset = true;
+        } catch (e) { display.value = "Error"; shouldReset = true; }
+    }
+
+    function calc(fn) {
+        try {
+            let val = display.value;
+            if(degree && ['sin', 'cos', 'tan'].includes(fn)) val = `(${val}) deg`;
+            let res = math.evaluate(`${fn}(${val})`);
+            display.value = math.format(res, { precision: 10 });
+            shouldReset = true;
+        } catch (e) { display.value = "Error"; }
+    }
+
+    // --- Graphing Logic ---
+    function drawGraph() {
+        const expr = display.value;
+        const xValues = [], yValues = [];
+        try {
+            for (let x = -10; x <= 10; x += 0.5) {
+                xValues.push(x);
+                yValues.push(math.evaluate(expr, { x: x }));
+            }
+            canvas.style.display = 'block';
+            if (chart) chart.destroy();
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: xValues,
+                    datasets: [{ label: 'f(x)', data: yValues, borderColor: '#007bff', tension: 0.3, fill: false }]
+                }
+            });
+        } catch (e) { alert("Enter a function with 'x' (e.g. x^2)"); }
+    }
+
+    // --- Features ---
+    function save(v) {
+        let h = JSON.parse(localStorage.getItem('calc_hist') || '[]');
+        h.unshift(v);
+        localStorage.setItem('calc_hist', JSON.stringify(h.slice(0, 5)));
+        renderHistory();
+    }
+
+    function renderHistory() {
+        historyBox.innerHTML = '';
+        JSON.parse(localStorage.getItem('calc_hist') || '[]').forEach(x => {
+            const d = document.createElement('div'); d.textContent = x; historyBox.appendChild(d);
+        });
+    }
+
+    function toggleTheme() { document.body.classList.toggle('light'); }
+    function toggleAngle() { degree = !degree; document.getElementById('angleBtn').innerText = degree ? 'Deg' : 'Rad'; }
+
+    function toggleVoice() {
+        const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        rec.onresult = (e) => { display.value += e.results[0][0].transcript; };
+        rec.start();
+    }
+
+    renderHistory();
+</script>
+</body>
+</html>
