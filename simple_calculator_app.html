@@ -10,80 +10,186 @@
 <script src="https://cdn.jsdelivr.net/npm/mathjs@11.11.0/lib/browser/math.min.js"></script>
 
 <style>
-:root{--bg:#1e1e1e;--calc:#2c2c2c;--text:#fff;--btn:#444;--accent:#ff9500;--equal:#28a745}
-body.light{--bg:#f4f4f4;--calc:#fff;--text:#000;--btn:#ddd}
-body{margin:0;background:var(--bg);font-family:Arial;display:flex;justify-content:center;align-items:center;min-height:100vh}
-.app{width:100%;max-width:420px;background:var(--calc);padding:12px;border-radius:14px;box-shadow:0 10px 25px rgba(0,0,0,.4)}
-button{border:none;border-radius:10px;padding:14px;font-size:16px;background:var(--btn);color:var(--text);cursor:pointer;transition:transform .08s ease,background .2s ease}
-button:active{transform:scale(0.93)}
-.display{width:100%;height:60px;font-size:22px;text-align:right;padding:10px;border-radius:10px;background:#000;color:#0f0;margin-bottom:10px}
-.grid{display:grid;grid-template-columns:60px repeat(4,1fr);gap:8px}
-.op{background:var(--accent)}
-.eq{background:var(--equal)}
-.history{background:#111;color:#0f0;padding:8px;border-radius:8px;margin-top:8px;font-size:13px}
-.compact .display{height:48px;font-size:18px}
-.compact button{padding:10px;font-size:14px}
-@media(max-width:480px){.app{max-width:100%;border-radius:0}.grid{gap:6px}}
+/* CSS Variables for theming */
+:root {
+  --bg: #1e1e1e;
+  --calc: #2c2c2c;
+  --text: #fff;
+  --btn: #444;
+  --accent: #ff9500;
+  --equal: #28a745;
+}
+
+/* Light theme override */
+body.light {
+  --bg: #f4f4f4;
+  --calc: #fff;
+  --text: #000;
+  --btn: #ddd;
+}
+
+/* Body and layout */
+body {
+  margin: 0;
+  background: var(--bg);
+  font-family: Arial;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* Calculator app container */
+.app {
+  width: 100%;
+  max-width: 420px;
+  background: var(--calc);
+  padding: 12px;
+  border-radius: 14px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, .4);
+}
+
+/* Button styles */
+button {
+  border: none;
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 16px;
+  background: var(--btn);
+  color: var(--text);
+  cursor: pointer;
+  transition: transform .08s ease, background .2s ease;
+}
+
+button:active {
+  transform: scale(0.93);
+}
+
+/* Display input */
+.display {
+  width: 100%;
+  height: 60px;
+  font-size: 22px;
+  text-align: right;
+  padding: 10px;
+  border-radius: 10px;
+  background: #000;
+  color: #0f0;
+  margin-bottom: 10px;
+}
+
+/* Calculator grid layout */
+.grid {
+  display: grid;
+  grid-template-columns: 60px repeat(4, 1fr);
+  gap: 8px;
+}
+
+/* Operator buttons */
+.op {
+  background: var(--accent);
+}
+
+/* Equals button */
+.eq {
+  background: var(--equal);
+}
+
+/* History panel */
+.history {
+  background: #111;
+  color: #0f0;
+  padding: 8px;
+  border-radius: 8px;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+/* Compact mode styles */
+.compact .display {
+  height: 48px;
+  font-size: 18px;
+}
+
+.compact button {
+  padding: 10px;
+  font-size: 14px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 480px) {
+  .app {
+    max-width: 100%;
+    border-radius: 0;
+  }
+
+  .grid {
+    gap: 6px;
+  }
+}
 </style>
 </head>
 <body>
-<div class="app" id="app">
-  <div style="display:flex;gap:6px;margin-bottom:6px">
-    <button onclick="toggleTheme()">🌙</button>
-    <button onclick="toggleAngle()" id="angleBtn">Deg</button>
-    
-    <button onclick="clearHistory()">🗑</button>
-    <button onclick="toggleMode()" id="modeBtn">Scientific</button>
+  <div class="app" id="app">
+    <!-- Control Panel -->
+    <div style="display:flex;gap:6px;margin-bottom:6px">
+      <button onclick="toggleTheme()">🌙</button>
+      <button onclick="toggleAngle()" id="angleBtn">Deg</button>
+      <button onclick="clearHistory()">🗑</button>
+      <button onclick="toggleMode()" id="modeBtn">Scientific</button>
+    </div>
+
+    <!-- Display -->
+    <input id="display" class="display" disabled />
+
+    <!-- Calculator Grid -->
+    <div class="grid" id="calculatorGrid">
+      <!-- Operators Row -->
+      <button class="op" onclick="append('/')">÷</button>
+      <button class="op" onclick="append('*')">×</button>
+      <button class="op" onclick="append('-')">−</button>
+      <button class="op" onclick="append('+')">+</button>
+      <button class="eq" onclick="calculate()">=</button>
+
+      <!-- Function Row -->
+      <button onclick="clearDisplay()">C</button>
+      <button onclick="backspace()">⌫</button>
+      <button onclick="memoryAdd()">M+</button>
+      <button onclick="memorySub()">M-</button>
+      <button onclick="memoryRecall()">MR</button>
+
+      <!-- Scientific Functions -->
+      <button onclick="calcTrig('sin')">sin</button>
+      <button onclick="calcTrig('cos')">cos</button>
+      <button onclick="calcTrig('tan')">tan</button>
+      <button onclick="calc('log10')">log</button>
+      <button onclick="calc('log')">ln</button>
+
+      <button onclick="calc('sqrt')">√</button>
+      <button onclick="calcFactorial()">x!</button>
+      <button onclick="append('pi')">π</button>
+      <button onclick="append('^')">xʸ</button>
+
+      <!-- Number Pad -->
+      <button onclick="append('7')">7</button>
+      <button onclick="append('8')">8</button>
+      <button onclick="append('9')">9</button>
+
+      <button onclick="append('4')">4</button>
+      <button onclick="append('5')">5</button>
+      <button onclick="append('6')">6</button>
+
+      <button onclick="append('1')">1</button>
+      <button onclick="append('2')">2</button>
+      <button onclick="append('3')">3</button>
+
+      <button onclick="append('0')">0</button>
+      <button onclick="append('.')">.</button>
+    </div>
+
+    <!-- History Panel -->
+    <div class="history" id="history"></div>
   </div>
-
-  <input id="display" class="display" disabled />
-
-  <div class="grid" id="calculatorGrid">
-    <!-- OPERATORS ROW -->
-    <button class="op" onclick="append('/')">÷</button>
-    <button class="op" onclick="append('*')">×</button>
-    <button class="op" onclick="append('-')">−</button>
-    <button class="op" onclick="append('+')">+</button>
-    <button class="eq" onclick="calculate()">=</button>
-
-    <!-- FUNCTION ROW -->
-    <button onclick="clearDisplay()">C</button>
-    <button onclick="backspace()">⌫</button>
-    <button onclick="memoryAdd()">M+</button>
-    <button onclick="memorySub()">M-</button>
-    <button onclick="memoryRecall()">MR</button>
-
-    <!-- SCIENTIFIC -->
-    <button onclick="calcTrig('sin')">sin</button>
-    <button onclick="calcTrig('cos')">cos</button>
-    <button onclick="calcTrig('tan')">tan</button>
-    <button onclick="calc('log10')">log</button>
-    <button onclick="calc('log')">ln</button>
-
-    <button onclick="calc('sqrt')">√</button>
-    <button onclick="calcFactorial()">x!</button>
-    <button onclick="append('pi')">π</button>
-    <button onclick="append('^')">xʸ</button>
-
-    <!-- NUMBERS -->
-    <button onclick="append('7')">7</button>
-    <button onclick="append('8')">8</button>
-    <button onclick="append('9')">9</button>
-
-    <button onclick="append('4')">4</button>
-    <button onclick="append('5')">5</button>
-    <button onclick="append('6')">6</button>
-
-    <button onclick="append('1')">1</button>
-    <button onclick="append('2')">2</button>
-    <button onclick="append('3')">3</button>
-
-    <button onclick="append('0')">0</button>
-    <button onclick="append('.')">.</button>
-  </div>
-
-  <div class="history" id="history"></div>
-</div>
 
 <script>
 const display = document.getElementById('display');
@@ -93,11 +199,13 @@ let degree = true;
 let memory = 0;
 let isScientific = true;
 
-function append(v){ display.value += v; }
-function clearDisplay(){ display.value = ''; }
-function backspace(){ display.value = display.value.slice(0,-1); }
+// Basic input functions
+function append(v) { display.value += v; }
+function clearDisplay() { display.value = ''; }
+function backspace() { display.value = display.value.slice(0, -1); }
 
-function toggleMode(){
+// UI mode functions
+function toggleMode() {
   const grid = document.getElementById('calculatorGrid');
   const btn = document.getElementById('modeBtn');
   const buttons = [...grid.children];
@@ -119,16 +227,23 @@ function toggleMode(){
   }
 }
 
-function calculate(){
-  try{
+function toggleTheme() { document.body.classList.toggle('light'); }
+function toggleAngle() {
+  degree = !degree;
+  document.getElementById('angleBtn').innerText = degree ? 'Deg' : 'Rad';
+}
+
+// Calculation functions
+function calculate() {
+  try {
     const res = math.evaluate(display.value);
     save(display.value + ' = ' + res);
     display.value = res;
   } catch { alert('Invalid Expression'); }
 }
 
-function calc(fn){
-  try{
+function calc(fn) {
+  try {
     const expr = fn + '(' + display.value + ')';
     const res = math.evaluate(expr);
     save(expr + ' = ' + res);
@@ -136,8 +251,8 @@ function calc(fn){
   } catch { alert('Invalid Expression'); }
 }
 
-function calcTrig(fn){
-  try{
+function calcTrig(fn) {
+  try {
     let val = parseFloat(display.value);
     if (degree) val = val * Math.PI / 180;
     const res = Math[fn](val);
@@ -146,8 +261,8 @@ function calcTrig(fn){
   } catch { alert('Invalid Expression'); }
 }
 
-function calcFactorial(){
-  try{
+function calcFactorial() {
+  try {
     const n = parseInt(display.value);
     if (n < 0) throw '';
     let r = 1;
@@ -157,18 +272,20 @@ function calcFactorial(){
   } catch { alert('Invalid Expression'); }
 }
 
-function memoryAdd(){ memory += Number(display.value||0); }
-function memorySub(){ memory -= Number(display.value||0); }
-function memoryRecall(){ display.value = memory; }
+// Memory functions
+function memoryAdd() { memory += Number(display.value || 0); }
+function memorySub() { memory -= Number(display.value || 0); }
+function memoryRecall() { display.value = memory; }
 
-function save(v){
+// History functions
+function save(v) {
   const h = JSON.parse(localStorage.getItem('history') || '[]');
   h.unshift(v);
-  localStorage.setItem('history', JSON.stringify(h.slice(0,40)));
+  localStorage.setItem('history', JSON.stringify(h.slice(0, 40)));
   renderHistory();
 }
 
-function renderHistory(){
+function renderHistory() {
   historyBox.innerHTML = '';
   (JSON.parse(localStorage.getItem('history')) || []).forEach(x => {
     const d = document.createElement('div');
@@ -177,13 +294,12 @@ function renderHistory(){
   });
 }
 
-function clearHistory(){ localStorage.removeItem('history'); renderHistory(); }
+function clearHistory() {
+  localStorage.removeItem('history');
+  renderHistory();
+}
 
-function toggleTheme(){ document.body.classList.toggle('light'); }
-function toggleAngle(){ degree = !degree; document.getElementById('angleBtn').innerText = degree ? 'Deg' : 'Rad'; }
-
-
-
+// Initialization
 console.assert(typeof toggleMode === 'function');
 console.assert(typeof calculate === 'function');
 
